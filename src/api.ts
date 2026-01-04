@@ -26,7 +26,7 @@ export async function fetchNFLSchedule(): Promise<ESPNData> {
     throw new Error(`ESPN API returned status ${response.status}`);
   }
 
-  const data: ESPNData = await response.json();
+  const data = await response.json() as ESPNData;
   console.log(`✓ Found ${data.items?.length || 0} games`);
 
   return data;
@@ -57,7 +57,7 @@ export async function processScheduleData(espnData: ESPNData): Promise<Schedule>
     try {
       // Fetch detailed event data
       const eventResponse = await fetch(eventRef.$ref);
-      const event: ESPNEventDetail = await eventResponse.json();
+      const event = await eventResponse.json() as ESPNEventDetail;
 
       // Get week number
       const week = event.week?.number || 1;
@@ -66,7 +66,7 @@ export async function processScheduleData(espnData: ESPNData): Promise<Schedule>
       if (event.competitions && event.competitions.length > 0) {
         const compRef = event.competitions[0].$ref;
         const compResponse = await fetch(compRef);
-        const competition: ESPNCompetition = await compResponse.json();
+        const competition = await compResponse.json() as ESPNCompetition;
 
         // Get competitors
         if (competition.competitors && competition.competitors.length === 2) {
@@ -81,8 +81,8 @@ export async function processScheduleData(espnData: ESPNData): Promise<Schedule>
             const homeTeamResponse = await fetch(homeCompRef.team.$ref);
             const awayTeamResponse = await fetch(awayCompRef.team.$ref);
 
-            const homeTeam: ESPNTeam = await homeTeamResponse.json();
-            const awayTeam: ESPNTeam = await awayTeamResponse.json();
+            const homeTeam = await homeTeamResponse.json() as ESPNTeam;
+            const awayTeam = await awayTeamResponse.json() as ESPNTeam;
 
             const homeTeamName = homeTeam.displayName;
             const awayTeamName = awayTeam.displayName;
