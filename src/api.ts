@@ -7,6 +7,7 @@ import {
   ESPNEventDetail,
   ESPNCompetition,
   ESPNTeam,
+  ESPNWeek,
   Schedule,
 } from './types';
 import { NFL_TEAMS } from './nfl-teams';
@@ -59,8 +60,21 @@ export async function processScheduleData(espnData: ESPNData): Promise<Schedule>
       const eventResponse = await fetch(eventRef.$ref);
       const event = await eventResponse.json() as ESPNEventDetail;
 
-      // Get week number
-      const week = event.week?.number || 1;
+      // Get week number - week is a reference, need to fetch it
+      let week = 1;
+      if (event.week?.$ref) {
+        try {
+          const weekResponse = await fetch(event.week.$ref);
+          const weekData = await weekResponse.json() as ESPNWeek;
+          week = weekData.number || 1;
+        } catch (error) {
+          // If week fetch fails, try to extract from URL
+          const weekMatch = event.week.$ref.match(/\/weeks\/(\d+)/);
+          if (weekMatch) {
+            week = parseInt(weekMatch[1], 10);
+          }
+        }
+      }
 
       // Fetch competition details
       if (event.competitions && event.competitions.length > 0) {

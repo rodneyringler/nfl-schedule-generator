@@ -25,11 +25,15 @@ export interface ESPNData {
 
 export interface ESPNEventDetail {
   week?: {
-    number: number;
+    $ref: string;
   };
   competitions?: Array<{
     $ref: string;
   }>;
+}
+
+export interface ESPNWeek {
+  number: number;
 }
 
 export interface ESPNCompetition {
