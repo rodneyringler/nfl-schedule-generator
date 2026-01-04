@@ -27,7 +27,7 @@ async function main() {
     const schedule = await processScheduleData(espnData);
 
     // Generate Excel spreadsheet
-    const outputPath = generateExcelSpreadsheet(schedule);
+    const outputPath = await generateExcelSpreadsheet(schedule);
 
     console.log('\n✅ Success!');
     console.log(`📄 Your NFL schedule is ready: ${outputPath}\n`);

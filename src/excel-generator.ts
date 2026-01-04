@@ -1,8 +1,8 @@
 /**
- * Excel spreadsheet generation using xlsx library
+ * Excel spreadsheet generation using exceljs library
  */
 
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { Schedule } from './types';
 import { NFL_TEAMS } from './nfl-teams';
 import * as path from 'path';
@@ -21,10 +21,10 @@ const COLORS = {
 /**
  * Generate Excel spreadsheet from schedule data
  */
-export function generateExcelSpreadsheet(
+export async function generateExcelSpreadsheet(
   schedule: Schedule,
   outputPath?: string
-): string {
+): Promise<string> {
   console.log('📊 Generating Excel spreadsheet...');
 
   // Determine number of weeks
@@ -37,135 +37,106 @@ export function generateExcelSpreadsheet(
 
   console.log(`   Found ${maxWeek} weeks of games`);
 
+  // Create workbook and worksheet
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('NFL 2025 Season');
+
   // Build header row
-  const headers = ['Team'];
+  const headerRow = worksheet.addRow(['Team']);
   for (let i = 1; i <= maxWeek; i++) {
-    headers.push(`Week ${i}`);
+    headerRow.getCell(i + 1).value = `Week ${i}`;
   }
 
-  // Build data rows
-  const data: any[][] = [headers];
+  // Style header row
+  headerRow.eachCell((cell, colNumber) => {
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF' + COLORS.HEADER },
+    };
+    cell.font = {
+      bold: true,
+      color: { argb: 'FFFFFFFF' },
+    };
+    cell.alignment = {
+      horizontal: 'center',
+      vertical: 'middle',
+    };
+  });
 
+  // Set header row height
+  headerRow.height = 25;
+
+  // Build data rows
   NFL_TEAMS.forEach((team) => {
-    const row: any[] = [team];
+    const row = worksheet.addRow([team]);
     const teamSchedule = schedule[team] || {};
 
     for (let week = 1; week <= maxWeek; week++) {
       const game = teamSchedule[week];
+      const cell = row.getCell(week + 1);
+      
       if (game) {
-        row.push(game.opponent);
+        cell.value = game.opponent;
+        
+        // Set background color based on result
+        let bgColor = COLORS.NOT_PLAYED;
+        switch (game.result) {
+          case 'WIN':
+            bgColor = COLORS.WIN;
+            break;
+          case 'LOSS':
+            bgColor = COLORS.LOSS;
+            break;
+          case 'TIE':
+            bgColor = COLORS.TIE;
+            break;
+          case 'NOT_PLAYED':
+            bgColor = COLORS.NOT_PLAYED;
+            break;
+        }
+        
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF' + bgColor },
+        };
       } else {
-        row.push('BYE');
-      }
-    }
-
-    data.push(row);
-  });
-
-  // Create workbook and worksheet
-  const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.aoa_to_sheet(data);
-
-  // Set column widths
-  const colWidths = [{ wch: 25 }]; // Team name column
-  for (let i = 1; i <= maxWeek; i++) {
-    colWidths.push({ wch: 22 }); // Week columns
-  }
-  worksheet['!cols'] = colWidths;
-
-  // Apply cell styling
-  const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-
-  for (let R = range.s.r; R <= range.e.r; R++) {
-    for (let C = range.s.c; C <= range.e.c; C++) {
-      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-      const cell = worksheet[cellAddress];
-
-      if (!cell) continue;
-
-      // Initialize cell style
-      if (!cell.s) cell.s = {};
-
-      // Header row styling
-      if (R === 0) {
-        cell.s = {
-          fill: {
-            fgColor: { rgb: COLORS.HEADER },
-          },
-          font: {
-            bold: true,
-            color: { rgb: 'FFFFFF' },
-          },
-          alignment: {
-            horizontal: 'center',
-            vertical: 'center',
-          },
+        cell.value = 'BYE';
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF' + COLORS.NOT_PLAYED },
         };
       }
-      // Data rows
-      else {
-        const teamIndex = R - 1;
-        const team = NFL_TEAMS[teamIndex];
-        const week = C;
-
-        if (C === 0) {
-          // Team name column - bold
-          cell.s = {
-            font: {
-              bold: true,
-            },
-            alignment: {
-              vertical: 'center',
-            },
-          };
-        } else {
-          // Game cells
-          const teamSchedule = schedule[team] || {};
-          const game = teamSchedule[week];
-
-          let bgColor = COLORS.NOT_PLAYED;
-
-          if (game) {
-            switch (game.result) {
-              case 'WIN':
-                bgColor = COLORS.WIN;
-                break;
-              case 'LOSS':
-                bgColor = COLORS.LOSS;
-                break;
-              case 'TIE':
-                bgColor = COLORS.TIE;
-                break;
-              case 'NOT_PLAYED':
-                bgColor = COLORS.NOT_PLAYED;
-                break;
-            }
-          }
-
-          cell.s = {
-            fill: {
-              fgColor: { rgb: bgColor },
-            },
-            alignment: {
-              horizontal: 'center',
-              vertical: 'center',
-            },
-          };
-        }
-      }
+      
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
     }
-  }
 
-  // Add worksheet to workbook
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'NFL 2025 Season');
+    // Style team name column (first column)
+    row.getCell(1).font = {
+      bold: true,
+    };
+    row.getCell(1).alignment = {
+      vertical: 'middle',
+    };
+  });
+
+  // Set column widths
+  worksheet.getColumn(1).width = 25; // Team name column
+  for (let i = 1; i <= maxWeek; i++) {
+    worksheet.getColumn(i + 1).width = 22; // Week columns
+  }
 
   // Determine output path
   const finalPath =
     outputPath || path.join(process.cwd(), 'NFL-2025-Season.xlsx');
 
   // Write file
-  XLSX.writeFile(workbook, finalPath);
-
+  await workbook.xlsx.writeFile(finalPath);
   console.log(`✓ Spreadsheet saved to: ${finalPath}`);
 
   return finalPath;

@@ -19,6 +19,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "exceljs": "^4.4.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
