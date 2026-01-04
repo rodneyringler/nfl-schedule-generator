@@ -1,0 +1,29 @@
+{
+  "name": "nfl-schedule-generator",
+  "version": "1.0.0",
+  "description": "Generate an NFL 2025 season schedule spreadsheet with color-coded game results",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "generate": "npm run build && npm start"
+  },
+  "keywords": [
+    "nfl",
+    "schedule",
+    "spreadsheet",
+    "excel",
+    "sports"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
